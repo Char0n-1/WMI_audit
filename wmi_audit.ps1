@@ -1,7 +1,7 @@
 Import-Module ActiveDirectory
 
 # Output paths
-$outputDir = "C:\Users\tianyi.zhao\Documents\wmi_output"
+$outputDir = "C:\change_me\wmi_output"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH"
 $latestResult = Join-Path $outputDir "Windows11_Scan_$timestamp.csv"
 $masterResult = Join-Path $outputDir "Windows11_Complete.csv"
