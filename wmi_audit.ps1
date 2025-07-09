@@ -1,7 +1,7 @@
 Import-Module ActiveDirectory
 
 # Output paths
-$outputDir = "C:\change_me\wmi_output"
+$outputDir = "C:\Users\tianyi.zhao\Documents\wmi_output"
 $timestamp = Get-Date -Format "yyyy-MM-dd_HH"
 $latestResult = Join-Path $outputDir "Windows11_Scan_$timestamp.csv"
 $masterResult = Join-Path $outputDir "Windows11_Complete.csv"
@@ -14,8 +14,14 @@ if (!(Test-Path $outputDir)) {
 # Get computer list
 $computers = Get-ADComputer -Filter * -Property Name | Select-Object -ExpandProperty Name
 
+# Filter out unreachable machines first
+$reachableComputers = $computers | Where-Object {
+    Test-Connection -ComputerName $_ -Count 1 -Quiet -ErrorAction SilentlyContinue
+}
+
+
 # Run in parallel
-$results = $computers | ForEach-Object -Parallel {
+$results = $reachableComputers | ForEach-Object -Parallel {
     $computerName = $_
 
     function Get-TotalRamGB {
@@ -85,9 +91,17 @@ if (Test-Path $masterResult) {
     $master = Import-Csv $masterResult
     foreach ($item in $results) {
         $existing = $master | Where-Object { $_.ComputerName -eq $item.ComputerName }
+
         if ($existing) {
-            $index = $master.IndexOf($existing)
-            $master[$index] = $item
+            $isExistingBad = $existing.OS -eq "Unavailable"
+            $isNewGood = $item.OS -ne "Unavailable"
+
+            if ($isNewGood -or $isExistingBad) {
+                # Replace only if the new result is better or existing is bad
+                $index = $master.IndexOf($existing)
+                $master[$index] = $item
+            }
+            # Else: keep the good existing result
         } else {
             $master += $item
         }
@@ -96,8 +110,10 @@ if (Test-Path $masterResult) {
     $master = $results
 }
 
+
 # Save master file
 $master | Export-Csv -Path $masterResult -NoTypeInformation -Encoding UTF8
 
 Write-Host "Latest result saved to: $latestResult"
 Write-Host "Master list updated at: $masterResult"
+Write-Host ""
