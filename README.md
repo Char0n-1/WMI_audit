@@ -27,6 +27,18 @@ For each computer, the script gathers:
 | LastChecked  | Timestamp of when the machine was scanned       |
 | Error        | WMI or RPC failure message (if any)             |
 
+## Features
+
+- Uses WMI (`Win32_OperatingSystem`) to retrieve OS version and build
+- Determines whether the OS is Windows 11 (`BuildNumber >= 22000`)
+- Runs in parallel (`ForEach-Object -Parallel`) for faster execution
+- Filters out unreachable computers with `Test-Connection`
+- Saves each scan to a timestamped CSV
+- Maintains a cumulative master list (one row per computer)
+- Does **not** overwrite good data with failed/unreachable results
+
+---
+
 ## Output Files
 
 All files are saved in:
@@ -45,6 +57,7 @@ C:\change_me\wmi_output
    * PowerShell 7+
    * AD module (`Import-Module ActiveDirectory`)
    * Domain-joined system with rights to query remote machines via WMI
+   * User account must have **Log on as a batch job** rights *(or run as SYSTEM)*
 
 2. **Run manually**:
 
